@@ -1,14 +1,8 @@
 use std::{fs::File, io::Write, path::Path};
 
-use axum::{
-    extract::Multipart,
-    response::{Html, IntoResponse},
-    routing::get,
-    Router,
-};
-use tokio::net::TcpListener;
+use axum::{extract::Multipart, response::IntoResponse};
 
-async fn upload(mut multipart: Multipart) -> impl IntoResponse {
+pub async fn upload(mut multipart: Multipart) -> impl IntoResponse {
     while let Some(field) = multipart.next_field().await.ok().flatten() {
         if field.name().unwrap_or("") != "fileupload" {
             continue;
@@ -37,28 +31,4 @@ async fn upload(mut multipart: Multipart) -> impl IntoResponse {
     }
 
     "No valid file uploaded!".to_string()
-}
-
-fn router() -> Router {
-    Router::new()
-        .route("/hello", get(display))
-        .route("/", get(index).post(upload))
-}
-
-async fn display() -> &'static str {
-    "Hello, World!"
-}
-
-async fn index() -> Html<&'static str> {
-    Html(std::include_str!("../public/index.html"))
-}
-
-#[tokio::main]
-async fn main() {
-    let addr = "127.0.0.1:5555";
-
-    let listener = TcpListener::bind(addr).await.unwrap();
-    println!("Server running on: http://{}", addr);
-
-    axum::serve(listener, router()).await.unwrap();
 }
