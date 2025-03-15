@@ -12,7 +12,9 @@ fn router() -> Router {
 async fn main() {
     let addr = "127.0.0.1:8888";
 
-    let listener = TcpListener::bind(addr).await.expect("Failed to read address");
+    let listener = TcpListener::bind(addr)
+        .await
+        .expect("Failed to read address");
     println!("Server running on: http://{}", addr);
 
     axum::serve(listener, router()).await.unwrap();

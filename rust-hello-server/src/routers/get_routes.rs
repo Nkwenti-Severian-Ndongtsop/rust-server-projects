@@ -1,6 +1,5 @@
 use axum::response::Html;
 
-
 pub async fn display() -> &'static str {
     "Hello, World!"
 }
