@@ -1,0 +1,8 @@
+[package]
+name = "server_upload"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reqwest = { version = "0.12.14", features = ["blocking", "multipart"] }
+clap = { version = "4.0", features = ["derive"] }

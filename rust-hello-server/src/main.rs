@@ -1,16 +1,17 @@
-use crate::routers::{get_routes::display, get_routes::index, post_routes::upload};
-use axum::{routing::get, Router};
+use crate::routers::{get_routes::display, get_routes::index, post_routes::upload, post_routes::send_file};
+use axum::{routing::{get, post}, Router};
 use tokio::net::TcpListener;
 
 fn router() -> Router {
     Router::new()
         .route("/hello", get(display))
         .route("/", get(index).post(upload))
+        .route("/upload", post(send_file))
 }
 
 #[tokio::main]
 async fn main() {
-    let addr = "127.0.0.1:8888";
+    let addr = "127.0.0.1:8000";
 
     let listener = TcpListener::bind(addr)
         .await
