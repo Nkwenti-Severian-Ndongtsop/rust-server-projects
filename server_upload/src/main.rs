@@ -1,6 +1,6 @@
 use clap::Parser;
-use reqwest::blocking::Client;
 use reqwest::blocking::multipart::{Form, Part};
+use reqwest::blocking::Client;
 use std::fs::File;
 use std::io::Read;
 
@@ -27,7 +27,8 @@ fn main() {
 
     // Send the file
     let client = Client::new();
-    let response = client.post(server_url)
+    let response = client
+        .post(server_url)
         .multipart(form)
         .send()
         .expect("Failed to send request");

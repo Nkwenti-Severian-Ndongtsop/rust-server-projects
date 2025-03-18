@@ -34,27 +34,6 @@ pub async fn upload(mut multipart: Multipart) -> impl IntoResponse {
     "No valid file uploaded!".to_string()
 }
 
-// pub async fn send_file(mut multipart: Multipart) -> &'static str {
-//     while let Some(field) = multipart.next_field().await.unwrap() {
-//         let file_name = field.file_name().unwrap_or("uploaded_file").to_string();
-//         let data = field.bytes().await.unwrap();
-
-//         // Ensure the directory exists
-//         let path = Path::new("uploads");
-//         if !path.exists() {
-//             std::fs::create_dir(path).expect("Failed to create 'uploads' directory!");
-//         }
-
-//         let file_path = path.join(&file_name);
-//         let mut file = File::create(&file_path).unwrap();
-//         file.write_all(&data).unwrap();
-
-//         println!("File uploaded: {}", file_name);
-//     }
-//     "File uploaded successfully!"
-// }
-
-
 pub async fn send_file(mut multipart: Multipart) -> &'static str {
     let current_dir = env::current_dir().unwrap();
 

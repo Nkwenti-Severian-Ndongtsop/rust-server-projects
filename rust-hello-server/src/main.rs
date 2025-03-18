@@ -1,5 +1,10 @@
-use crate::routers::{get_routes::display, get_routes::index, post_routes::upload, post_routes::send_file};
-use axum::{routing::{get, post}, Router};
+use crate::routers::{
+    get_routes::display, get_routes::index, post_routes::send_file, post_routes::upload,
+};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 use tokio::net::TcpListener;
 
 fn router() -> Router {
