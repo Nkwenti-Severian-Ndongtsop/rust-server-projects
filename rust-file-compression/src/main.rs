@@ -4,8 +4,7 @@ use std::env;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Write};
 
-/// Compresses a file using Gzip compression and writes it to the output file.
-
+/// Compresses a file using Gzip compression and writes it to the output file
 fn compress_file(input_path: &str, output_path: &str) -> std::io::Result<()> {
     // Open the input file
     let input_file = File::open(input_path)?;
