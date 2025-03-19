@@ -1,46 +1,67 @@
 use axum::{
-    extract::Path, response::IntoResponse, routing::get, Json, Router
+    extract::Path,
+    response::{IntoResponse, Response},
+    routing::get,
+    Json, Router,
 };
+use std::net::SocketAddr;
 
 mod structs;
 
-async fn weather(Path(city): Path<String>) -> impl IntoResponse {
+#[axum::debug_handler]
+async fn weather(Path(city): Path<String>) -> Result<impl IntoResponse, Response> {
     let api_key = "bf053a6405289e6477153f723c063be0";
     let url = format!(
         "http://api.openweathermap.org/data/2.5/weather?q={}&appid={}",
         city, api_key
     );
     let response = reqwest::get(&url)
-    .await
-    .expect("Couldn't Get the data")
-    .json::<structs::WeatherData>()
-    .await
-    .expect("Couldn't parse the data");
+        .await
+        .expect("Couldn't Get the data")
+        .json::<structs::WeatherData>()
+        .await
+        .map_err(|_| {
+            (
+                axum::http::StatusCode::NOT_FOUND,
+                "City not found".to_string(),
+            )
+                .into_response()
+        });
 
-    println!("The weather in {:?} is {:?} \nwith a temperature of {:?}°C", city, response.weather[0].description, response.main.temp);
+    match response {
+        Ok(data) => {
+            println!(
+                "The weather in {:?} is {:?} \nwith a temperature of {:?}°C",
+                city, data.weather[0].description, data.main.temp
+            );
 
-    Json(structs::WeatherResponse {
-        city: city.clone(),
-        temperature: response.main.temp,
-        description: response.weather[0].description.clone(),
-    })
+            Ok(Json(structs::WeatherResponse {
+                city: city,
+                temperature: data.main.temp,
+                description: data.weather[0].description.clone(),
+            })
+            .into_response())
+        }
+        Err(_) => Err((
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            "City not found".to_string(),
+        )
+            .into_response()),
+    }
 }
 
 fn router() -> Router {
-    Router::new().route("/weather/{city}", get(weather))
+    Router::new().route("/weather/:city", get(weather))
 }
 
 #[tokio::main]
 async fn main() {
-    let addr = "0.0.0.0:8080";
-
-    let listener = tokio::net::TcpListener::bind(addr)
-        .await
-        .expect("Invalid address");
+    let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
 
     println!("Server is running on: http://{}", addr);
 
-    axum::serve(listener, router())
+    axum::Server::bind(&addr)
+        .serve(router().into_make_service())
         .await
         .expect("Invalid server");
 }
