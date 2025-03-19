@@ -8,11 +8,11 @@ use axum::{
 mod structs;
 
 #[axum::debug_handler]
-async fn weather(Path(city): Path<String>) -> Result<impl IntoResponse, Response> {
+async fn weather(Path(location): Path<String>) -> Result<impl IntoResponse, Response> {
     let api_key = "bf053a6405289e6477153f723c063be0";
     let url = format!(
         "http://api.openweathermap.org/data/2.5/weather?q={}&appid={}",
-        city, api_key
+        location, api_key
     );
     let response = reqwest::get(&url)
         .await
@@ -31,11 +31,11 @@ async fn weather(Path(city): Path<String>) -> Result<impl IntoResponse, Response
         Ok(data) => {
             println!(
                 "The weather in {:?} is {:?} \nwith a temperature of {:?}°C",
-                city, data.weather[0].description, data.main.temp
+                location, data.weather[0].description, data.main.temp
             );
 
             Ok(Json(structs::WeatherResponse {
-                city: city,
+                city: location,
                 temperature: data.main.temp,
                 description: data.weather[0].description.clone(),
             })
@@ -50,7 +50,7 @@ async fn weather(Path(city): Path<String>) -> Result<impl IntoResponse, Response
 }
 
 fn router() -> Router {
-    Router::new().route("/weather/:city", get(weather))
+    Router::new().route("/weather/{location}", get(weather))
 }
 
 #[tokio::main]
