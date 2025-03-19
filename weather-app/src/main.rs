@@ -4,7 +4,6 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use std::net::SocketAddr;
 
 mod structs;
 
@@ -56,12 +55,13 @@ fn router() -> Router {
 
 #[tokio::main]
 async fn main() {
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
+    let addr = "127.0.0.1:8080";
+
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .expect("Failed to bind port");
 
     println!("Server is running on: http://{}", addr);
 
-    axum::Server::bind(&addr)
-        .serve(router().into_make_service())
-        .await
-        .expect("Invalid server");
+    axum::serve(listener, router()).await.expect("server error")
 }
