@@ -2,6 +2,13 @@
 name = "weather-app"
 version = "0.1.0"
 edition = "2021"
+authors = ["Nkwenti-Severian <halamadrid651643565@gmail.com>"]
+description = "A simple CLI tool to fetch weather data, by default uses you ip location"
+repository = "https://github.com/Nkwenti-Severian-Ndongtsop/rust-server-projects"
+license = "MIT"
+readme = "README.md"
+categories = ["command-line-utilities"]
+keywords = ["weather", "cli", "forecast", "geolocation", "api"]
 
 [dependencies]
 axum = { version = "0.8.1", features = ["macros"] }
