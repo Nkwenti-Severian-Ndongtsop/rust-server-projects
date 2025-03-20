@@ -1,5 +1,5 @@
-use std::env;
 use reqwest::Error;
+use std::env;
 use structs::WeatherData;
 
 mod structs;
@@ -25,7 +25,10 @@ async fn fetch_weather(location: &str) -> Result<(), Error> {
 
 async fn geolocation() -> Result<String, Error> {
     let url = "http://ip-api.com/json/";
-    let response = reqwest::get(url).await?.json::<structs::GeoLocation>().await?;
+    let response = reqwest::get(url)
+        .await?
+        .json::<structs::GeoLocation>()
+        .await?;
 
     println!(
         "\n📍 Location Info:
@@ -41,10 +44,8 @@ async fn geolocation() -> Result<String, Error> {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    // Get city argument from CLI
     let city = env::args().nth(1);
 
-    // If no city is provided, auto-detect location
     let location = match city {
         Some(city_name) => city_name,
         None => {
@@ -56,7 +57,6 @@ async fn main() -> Result<(), Error> {
         }
     };
 
-    // Fetch weather
     if let Err(e) = fetch_weather(&location).await {
         eprintln!("❌ Error fetching weather: {}", e);
         eprintln!("⚠️ Might be an invalid city name or network error.");
