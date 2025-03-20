@@ -15,7 +15,7 @@ async fn fetch_weather(location: &str) -> Result<(), Error> {
     let response = reqwest::get(&url).await?.json::<WeatherData>().await?;
 
     println!(
-        "The weather in {} is {} \nwith a temperature of {}°C\n",
+        "\nThe weather in {} is {} \nwith a temperature of {}°C",
         location,
         response.weather[0].description,
         response.main.temp - 273.15
@@ -31,7 +31,7 @@ async fn geolocation() -> Result<(), Error> {
         .json::<structs::GeoLocation>()
         .await?;
     println!(
-        "Your Hosted on: {}
+        "\nYour Hosted on: {}
     With a Timezone of: {}
     In the City: {}
     Your ISP is: {}",
@@ -51,12 +51,18 @@ async fn main() -> Result<(), Error> {
         .await?;
     let mut args: Vec<String> = env::args().collect();
 
-    if args.len() == 1 {
-        let location = default_loc.country.clone();
-        args.push(location);
-    } else {
-        eprintln!("Usage: weather-app <city>");
-        std::process::exit(1);
+    match args.len() {
+        1 => {
+            let location = default_loc.city.clone();
+            args.push(location);
+        }
+        2 => {
+            args[1] = args[1].clone();
+        }
+        _ => {
+            eprintln!("Usage: cargo run <city>");
+            std::process::exit(1);
+        }
     }
 
     if let Err(e) = fetch_weather(&args[1]).await {
