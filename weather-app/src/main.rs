@@ -4,25 +4,6 @@ use structs::WeatherData;
 
 mod structs;
 
-async fn fetch_weather(location: &str) -> Result<(), Error> {
-    let api_key = "ec46e688303fc6fda12f9f5c46c59614";
-    let url = format!(
-        "http://api.openweathermap.org/data/2.5/weather?q={}&appid={}",
-        location, api_key
-    );
-
-    let response = reqwest::get(&url).await?.json::<WeatherData>().await?;
-
-    println!(
-        "\n🌤️ The weather in {} is {} \n🌡️ Temperature: {:.2}°C",
-        location,
-        response.weather[0].description,
-        response.main.temp - 273.15 // Convert from Kelvin to Celsius
-    );
-
-    Ok(())
-}
-
 async fn geolocation() -> Result<String, Error> {
     let url = "http://ip-api.com/json/";
     let response = reqwest::get(url)
@@ -40,6 +21,25 @@ async fn geolocation() -> Result<String, Error> {
     );
 
     Ok(response.city)
+}
+
+async fn fetch_weather(location: &str) -> Result<(), Error> {
+    let api_key = "ec46e688303fc6fda12f9f5c46c59614";
+    let url = format!(
+        "http://api.openweathermap.org/data/2.5/weather?q={}&appid={}",
+        location, api_key
+    );
+
+    let response = reqwest::get(&url).await?.json::<WeatherData>().await?;
+
+    println!(
+        "\n🌤️ The weather in {} is {} \n🌡️ Temperature: {:.2}°C",
+        location,
+        response.weather[0].description,
+        response.main.temp - 273.15
+    );
+
+    Ok(())
 }
 
 #[tokio::main]
