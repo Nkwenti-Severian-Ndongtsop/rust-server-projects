@@ -28,5 +28,5 @@ pub struct GeoLocation {
     pub country: String,
     pub timezone: String,
     pub isp: String,
-    pub city: String 
+    pub city: String,
 }
