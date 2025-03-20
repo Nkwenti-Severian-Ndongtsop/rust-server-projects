@@ -18,5 +18,5 @@ jobs:
       - name: 📦 Log in to Crates.io
         run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
 
-      - name: 🚀 Publish to Crates.io
-        run: cargo publish --allow-dirty --verbose
+      - name: Publish to crates.io
+        run: cargo publish -p weather-app --allow-dirty --verbose
