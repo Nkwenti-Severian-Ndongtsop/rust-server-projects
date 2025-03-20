@@ -1,6 +1,6 @@
 [package]
 name = "weather-app"
-version = "0.1.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Nkwenti-Severian <halamadrid651643565@gmail.com>"]
 description = "A simple CLI tool to fetch weather data, by default uses you ip location"
