@@ -3,7 +3,7 @@ name: Publish to Crates.io
 on:
   push:
     tags:
-      - "v*"  # Runs when a tag like v1.0.0 is pushed
+      - "*"  # Runs when a tag like v1.0.0 is pushed
 
 jobs:
   publish:
