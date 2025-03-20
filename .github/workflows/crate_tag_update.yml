@@ -1,0 +1,22 @@
+name: Publish to Crates.io
+
+on:
+  push:
+    tags:
+      - "v*"  # Runs when a tag like v1.0.0 is pushed
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛎️ Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 📦 Log in to Crates.io
+        run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
+
+      - name: 🚀 Publish to Crates.io
+        run: cargo publish --allow-dirty --verbose
