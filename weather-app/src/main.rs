@@ -1,5 +1,4 @@
 use std::env;
-
 use reqwest::Error;
 use structs::WeatherData;
 
@@ -15,64 +14,52 @@ async fn fetch_weather(location: &str) -> Result<(), Error> {
     let response = reqwest::get(&url).await?.json::<WeatherData>().await?;
 
     println!(
-        "\nThe weather in {} is {} \nwith a temperature of {}°C",
+        "\n🌤️ The weather in {} is {} \n🌡️ Temperature: {:.2}°C",
         location,
         response.weather[0].description,
-        response.main.temp - 273.15
+        response.main.temp - 273.15 // Convert from Kelvin to Celsius
     );
 
     Ok(())
 }
 
-async fn geolocation() -> Result<(), Error> {
+async fn geolocation() -> Result<String, Error> {
     let url = "http://ip-api.com/json/";
-    let response = reqwest::get(url)
-        .await?
-        .json::<structs::GeoLocation>()
-        .await?;
+    let response = reqwest::get(url).await?.json::<structs::GeoLocation>().await?;
+
     println!(
-        "\nYour Hosted on: {}
-    With a Timezone of: {}
-    In the City: {}
-    Your ISP is: {}",
-        response.country, response.timezone, response.city, response.isp
+        "\n📍 Location Info:
+    🌍 Country: {}
+    🏙️ City: {}
+    🕰️ Timezone: {}
+    📡 ISP: {}\n",
+        response.country, response.city, response.timezone, response.isp
     );
 
-    Ok(())
+    Ok(response.city)
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let url = "http://ip-api.com/json/";
+    // Get city argument from CLI
+    let city = env::args().nth(1);
 
-    let default_loc = reqwest::get(url)
-        .await?
-        .json::<structs::GeoLocation>()
-        .await?;
-    let mut args: Vec<String> = env::args().collect();
-
-    match args.len() {
-        1 => {
-            let location = default_loc.city.clone();
-            args.push(location);
+    // If no city is provided, auto-detect location
+    let location = match city {
+        Some(city_name) => city_name,
+        None => {
+            println!("No city provided. Detecting location...");
+            geolocation().await.unwrap_or_else(|_| {
+                eprintln!("Failed to detect location. Please enter a city manually.");
+                std::process::exit(1);
+            })
         }
-        2 => {
-            args[1] = args[1].clone();
-        }
-        _ => {
-            eprintln!("Usage: cargo run <city>");
-            std::process::exit(1);
-        }
-    }
+    };
 
-    if let Err(e) = fetch_weather(&args[1]).await {
-        eprintln!("Error fetching weather: {}", e);
-        eprintln!("Might be invalid city name or network error");
-    }
-
-    if let Err(e) = geolocation().await {
-        eprintln!("Error fetching your data: {}", e);
-        eprintln!("Might be network issues");
+    // Fetch weather
+    if let Err(e) = fetch_weather(&location).await {
+        eprintln!("❌ Error fetching weather: {}", e);
+        eprintln!("⚠️ Might be an invalid city name or network error.");
     }
 
     Ok(())
