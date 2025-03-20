@@ -32,7 +32,7 @@ async fn fetch_weather(location: &str) -> Result<(), Error> {
         "The weather in {} is {} \nwith a temperature of {}°C",
         location,
         response.weather[0].description,
-        response.main.temp - 273.15 
+        response.main.temp - 273.15
     );
 
     Ok(())
