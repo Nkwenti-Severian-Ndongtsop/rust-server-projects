@@ -1,7 +1,8 @@
 [package]
 name = "server_upload"
 version = "0.1.0"
-edition = "2021"
+edition = "2018"
+
 
 [dependencies]
 reqwest = { version = "0.12.14", features = ["blocking", "multipart"] }
