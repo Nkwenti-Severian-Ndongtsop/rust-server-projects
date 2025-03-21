@@ -11,17 +11,18 @@ A blazing-fast and simple command-line application to fetch and display weather 
 ### Prerequisites
 - 🦀 Rust (latest stable version recommended)
 
-### 📥 Clone the Repository
+### ▶️ Run the CLI
+
+-  add this **export PATH="$HOME/.cargo/bin:$PATH"** to you shell configuration file e.g: ~/.zshrc ~/.bashrc
+
 ```sh
-git clone https://github.com/Nkwenti-Severian-Ndongtsop/rust-server-projects.git
-cd weather-app
+export PATH="$HOME/.cargo/bin:$PATH"
 ```
 
-
-### ▶️ Run the CLI
 ```sh
 cargo run [CITY_NAME/COUNTRY]
 ```
+
 Example:
 ```sh
 cargo run tokyo
