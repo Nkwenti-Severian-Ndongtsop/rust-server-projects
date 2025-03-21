@@ -16,17 +16,17 @@ fn main() {
     let args = Args::parse();
     let server_url = "http://localhost:8000/upload";
 
-    // Read the ca
+    
     for file_path in &args.file_path {
         let mut file = File::open(file_path).expect("Failed to open file");
         let mut buffer = Vec::new();
         file.read_to_end(&mut buffer).expect("Failed to read file");
 
-        // Create a multipart form
+
         let part = Part::bytes(buffer).file_name(file_path.clone());
         let form = Form::new().part("file", part);
 
-        // Send the file
+
         let client = Client::new();
         let response = client
             .post(server_url)
