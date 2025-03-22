@@ -20,12 +20,12 @@ export PATH="$HOME/.cargo/bin:$PATH"
 ```
 
 ```sh
-cargo run [CITY_NAME/COUNTRY]
+weather-app [CITY_NAME/COUNTRY]
 ```
 
 Example:
 ```sh
-cargo run tokyo
+weather-app tokyo
 ```
 
 
