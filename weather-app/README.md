@@ -48,3 +48,5 @@ Feel free to **fork** the repository, **create issues**, or **submit pull reques
 ---
 🌍 Stay informed with real-time weather updates from your terminal! 🚀
 
+---
+🚀 Also avaialable on crate.io with the name [**weather-app**](https://crates.io/crates/weather-app)
