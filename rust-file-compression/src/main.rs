@@ -5,9 +5,9 @@ use std::io::{BufReader, BufWriter, Read, Write};
 
 /// Compresses a file using Gzip compression and writes it to the output file
 fn compress_file(
-    input_path: &String,
-    output_path: &String,
-    method: &String,
+    input_path: &str,
+    output_path: &str,
+    method: &str,
 ) -> std::io::Result<()> {
     // Open the input file
     let input_file = File::open(input_path)?;
@@ -18,7 +18,7 @@ fn compress_file(
     let writer = BufWriter::new(output_file);
 
     // Create a GzEncoder to compress the data
-    let mut encoder = match method.as_str() {
+    let mut encoder = match method {
         "best" => GzEncoder::new(writer, Compression::best()),
         "fast" => GzEncoder::new(writer, Compression::fast()),
         "default" => GzEncoder::new(writer, Compression::default()),
@@ -50,9 +50,9 @@ fn main() {
             .read_line(&mut response)
             .expect("Failed to take response");
 
-        if response.trim() == "n".to_string() {
+        if response.trim() == "n" {
             break;
-        } else if response.trim() == "y".to_string() {
+        } else if response.trim() == "y" {
             println!("Enter the file to be compressed");
             std::io::stdin()
                 .read_line(&mut i_file)
@@ -73,21 +73,18 @@ fn main() {
         }
     }
 
-    let mut index = 0;
-
-    for _ in 0..output_files.len() {
-        let (input, output, method) =
-            (&input_files[index], &output_files[index], &comp_meth[index]);
+    for i in 0..output_files.len() {
+        let (input, output, method) = (&input_files[i], &output_files[i], &comp_meth[i]);
 
         let result = compress_file(input, output, method);
 
-        match result  {
+        match result {
             Ok(_) => {
-                println!("The file number {} was compressed successfully", index + 1)
+                println!("The file number {} was compressed successfully", i + 1)
             }
-            Err(error) => { eprint!("Error: {}", error)},
+            Err(error) => {
+                eprint!("Error: {}", error)
+            }
         }
-
-        index += 1
     }
 }
