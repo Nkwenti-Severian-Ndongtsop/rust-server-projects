@@ -13,10 +13,29 @@ struct Args {
 }
 
 fn main() {
-    let args = Args::parse();
     let server_url = "http://localhost:8000/upload";
+    let mut files: Vec<String> = Vec::new();
 
-    for file_path in &args.file_path {
+    loop {
+        let mut input = String::new();
+        println!("Do you want to upload a file (y/n):");
+        let mut response = String::new();
+        std::io::stdin()
+            .read_line(&mut response)
+            .expect("Invalid input for file");
+        if response.trim() == "n" {
+            break;
+        } else if response.trim() == "y" {
+            println!("Enter the file path:");
+            std::io::stdin()
+                .read_line(&mut input)
+                .expect("Invaliinput input for file");
+            files.push(input.trim().to_string());
+        }
+        println!("{:?}", files)
+    }
+
+    for file_path in &files {
         let mut file = File::open(file_path).expect("Failed to open file");
         let mut buffer = Vec::new();
         file.read_to_end(&mut buffer).expect("Failed to read file");
