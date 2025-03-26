@@ -5,22 +5,26 @@ use std::io::{self, Read};
 
 fn main() {
     let server_url = "http://localhost:8000/upload";
-    let client = Client::new(); 
+    let client = Client::new();
     let mut files: Vec<String> = Vec::new();
 
     loop {
         let mut response = String::new();
         println!("Do you want to upload a file? (y/n):");
-        io::stdin().read_line(&mut response).expect("Failed to read input");
+        io::stdin()
+            .read_line(&mut response)
+            .expect("Failed to read input");
 
         match response.trim() {
-            "n" => break, 
+            "n" => break,
             "y" => {
                 let mut file_path = String::new();
                 println!("Enter the file path:");
-                io::stdin().read_line(&mut file_path).expect("Failed to read file path");
+                io::stdin()
+                    .read_line(&mut file_path)
+                    .expect("Failed to read file path");
                 let trimmed_path = file_path.trim().to_string();
-                
+
                 if trimmed_path.is_empty() {
                     println!("File path cannot be empty!");
                 } else {
@@ -54,7 +58,6 @@ fn main() {
         }
     }
 
-   
     match client.post(server_url).multipart(form).send() {
         Ok(response) => match response.text() {
             Ok(text) => println!("Server Response: {}", text),
