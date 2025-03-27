@@ -5,6 +5,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use routers::post_routes::compress_file;
 use tokio::net::TcpListener;
 
 fn router() -> Router {
@@ -12,6 +13,7 @@ fn router() -> Router {
         .route("/hello", get(display))
         .route("/", get(index).post(upload))
         .route("/upload", post(send_file))
+        .route("/compress", post(compress_file))
 }
 
 #[tokio::main]
