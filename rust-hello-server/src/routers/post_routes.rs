@@ -50,7 +50,7 @@ pub async fn send_file(mut multipart: Multipart) -> &'static str {
             let file_name = file_name.to_string();
             let data = field.bytes().await.unwrap_or_else(|_| {
                 eprintln!("Failed to read file bytes");
-                return vec![].into();
+                vec![].into()
             });
 
             let file_path = path.join(&file_name);
@@ -81,7 +81,6 @@ use flate2::Compression;
 use std::io::{BufReader, BufWriter, Read};
 
 pub async fn compress_file(mut multipart: Multipart) -> impl IntoResponse {
-    
     let output_dir = "compressed_files";
     if !Path::new(output_dir).exists() {
         std::fs::create_dir(output_dir).expect("Failed to create output directory");
