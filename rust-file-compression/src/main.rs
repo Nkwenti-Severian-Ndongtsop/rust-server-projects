@@ -1,44 +1,16 @@
-use flate2::write::GzEncoder;
-use flate2::Compression;
+use reqwest::blocking::multipart::{Form, Part};
+use reqwest::blocking::Client;
 use std::fs::File;
-use std::io::{BufReader, BufWriter, Read, Write};
-
-/// Compresses a file using Gzip compression and writes it to the output file
-fn compress_file(input_path: &str, output_path: &str, method: &str) -> std::io::Result<()> {
-    // Open the input file
-    let input_file = File::open(input_path)?;
-    let mut reader = BufReader::new(input_file);
-
-    // Create the output file
-    let output_file = File::create(output_path)?;
-    let writer = BufWriter::new(output_file);
-
-    // Create a GzEncoder to compress the data
-    let mut encoder = match method {
-        "best" => GzEncoder::new(writer, Compression::best()),
-        "fast" => GzEncoder::new(writer, Compression::fast()),
-        "default" => GzEncoder::new(writer, Compression::default()),
-
-        _ => GzEncoder::new(writer, Compression::best()),
-    };
-
-    // Read data from the input file and write compressed data to output
-    let mut buffer = Vec::new();
-    reader.read_to_end(&mut buffer)?;
-    encoder.write_all(&buffer)?;
-    encoder.finish()?;
-
-    Ok(())
-}
+use std::io::Read;
 
 fn main() {
     let mut input_files: Vec<String> = Vec::new();
-    let mut output_files: Vec<String> = Vec::new();
     let mut comp_meth: Vec<String> = Vec::new();
+    let server_url = "http://localhost:8000/compress";
+
     loop {
         let mut response = String::new();
         let mut i_file = String::new();
-        let mut o_file = String::new();
         let mut comp_method = String::new();
         println!("Do you want to compress files (y/n)");
 
@@ -49,19 +21,13 @@ fn main() {
         if response.trim() == "n" {
             break;
         } else if response.trim() == "y" {
-            println!("Enter the file to be compressed");
+            println!("Enter the file to be compressed:");
             std::io::stdin()
                 .read_line(&mut i_file)
                 .expect("Failed to take file");
             input_files.push(i_file.trim().to_string());
 
-            println!("Enter path to store compressed file");
-            std::io::stdin()
-                .read_line(&mut o_file)
-                .expect("Failed to take output path");
-            output_files.push(o_file.trim().to_string());
-
-            println!("Enter compression method");
+            println!("Enter compression method (e.g., best, fast, default):");
             std::io::stdin()
                 .read_line(&mut comp_method)
                 .expect("Failed to take compression method");
@@ -69,18 +35,37 @@ fn main() {
         }
     }
 
-    for i in 0..output_files.len() {
-        let (input, output, method) = (&input_files[i], &output_files[i], &comp_meth[i]);
+    if input_files.is_empty() {
+        println!("No files to compress. Exiting.");
+        return;
+    }
 
-        let result = compress_file(input, output, method);
-
-        match result {
-            Ok(_) => {
-                println!("The file number {} was compressed successfully", i + 1)
+    let mut form = Form::new();
+    for (i, file_path) in input_files.iter().enumerate() {
+        let method = &comp_meth[i];
+        match File::open(file_path) {
+            Ok(mut file) => {
+                let mut buffer = Vec::new();
+                if file.read_to_end(&mut buffer).is_ok() {
+                    let filename = file_path.split('/').last().unwrap_or("unknown_file");
+                    let file_part = Part::bytes(buffer).file_name(filename.to_string());
+                    form = form.part(format!("file_{}", i), file_part);
+                    form = form.text(format!("method_{}", i), method.clone());
+                }
             }
-            Err(error) => {
-                eprint!("Error: {}", error)
+            Err(e) => {
+                eprintln!("Failed to read file '{}': {}", file_path, e);
+                return;
             }
         }
+    }
+
+    let client = Client::new();
+    match client.post(server_url).multipart(form).send() {
+        Ok(response) => match response.text() {
+            Ok(text) => println!("Server Response: {}", text),
+            Err(_) => println!("Failed to read server response."),
+        },
+        Err(err) => println!("Request failed: {:?}", err),
     }
 }
