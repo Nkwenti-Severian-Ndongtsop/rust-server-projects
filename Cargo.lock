@@ -1084,7 +1084,7 @@ dependencies = [
 name = "rust-file-compression"
 version = "0.1.0"
 dependencies = [
- "flate2",
+ "reqwest",
 ]
 
 [[package]]
@@ -1092,6 +1092,7 @@ name = "rust-hello-server"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "flate2",
  "tokio",
  "tower-http",
 ]
