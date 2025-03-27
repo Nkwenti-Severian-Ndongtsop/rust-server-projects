@@ -40,18 +40,15 @@ fn main() {
         return;
     }
 
-    // Create a multipart form to send all files in one request
     let mut form = Form::new();
     for file_path in &files {
         match File::open(file_path) {
             Ok(mut file) => {
                 let mut buffer = Vec::new();
                 if file.read_to_end(&mut buffer).is_ok() {
-                    let filename = file_path.split('/').last().unwrap_or("unknown_file"); // Extract filename from path
+                    let filename = file_path.split('/').last().unwrap_or("unknown_file");
                     let part = Part::bytes(buffer).file_name(filename.to_string());
-                    form = form.part("files", part); // Append file to multipart form
-                } else {
-                    println!("Failed to read file: {}", file_path);
+                    form = form.part("files", part); 
                 }
             }
             Err(_) => println!("Could not open file: {}", file_path),
