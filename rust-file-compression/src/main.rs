@@ -59,10 +59,8 @@ async fn main() {
                 let _ = update_state(&pool3, id as i32, FileStatus::Completed).await;
                 println!(
                     "The file {}\n\nHas ID: {}\n\nFile State: completed",
-                    file,
-                    id, 
+                    file, id,
                 )
-
             }
         }
         Err(e) => {
@@ -73,15 +71,10 @@ async fn main() {
             for file in files {
                 let id = insert_user(&pool1, &pool2, file).await;
                 let _ = update_state(&pool3, id as i32, FileStatus::Failed).await;
-                println!(
-                    "The file {}\n\nHas ID: {}\n\nFile State: failed",
-                    file,
-                    id, 
-                )
-
+                println!("The file {}\n\nHas ID: {}\n\nFile State: failed", file, id,)
             }
             eprintln!("Failed to upload files: {}\n", e)
-        },
+        }
     }
 }
 
