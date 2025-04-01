@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-reqwest = { version = "0.12.15", features = ["blocking", "multipart"] }
-sqlx = { version = "0.8.3", features = ["postgres"] }
+reqwest = { version = "0.12.15", features = ["multipart", "json"] }
+sqlx = { version = "0.8.3", features = ["runtime-tokio-native-tls", "postgres"] }
 tokio = { version = "1.44.1", features = ["full"] }
+futures = "0.3"
+clap = { version = "4.0", features = ["derive"] }
