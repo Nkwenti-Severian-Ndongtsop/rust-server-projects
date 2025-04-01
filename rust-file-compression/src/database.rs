@@ -8,13 +8,12 @@ pub async fn insert_user(pool1: &sqlx::PgPool, pool2: &sqlx::PgPool, file_path: 
         .execute(pool1)
         .await
         .unwrap();
-    let id = "SELECT id FROM files WHERE file_path=$1";
 
-    let result = sqlx::query(id)
+    let result = sqlx::query(    "SELECT id FROM files WHERE file_path=$1"
+)
         .bind(file_path)
         .execute(pool2)
         .await
         .unwrap();
-    let id = result.rows_affected();
-    id
+    result.rows_affected()
 }
