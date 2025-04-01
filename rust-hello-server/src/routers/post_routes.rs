@@ -1,8 +1,13 @@
 use std::path::PathBuf;
 use std::{env, fs};
 use std::{fs::File, io::Write, path::Path};
+use serde_json::json;
 
+use axum::Json;
 use axum::{extract::Multipart, response::IntoResponse};
+use flate2::write::GzEncoder;
+use flate2::Compression;
+use std::io::{BufReader, BufWriter, Read};
 
 pub async fn upload(mut multipart: Multipart) -> impl IntoResponse {
     while let Some(field) = multipart.next_field().await.ok().flatten() {
@@ -76,9 +81,6 @@ pub async fn send_file(mut multipart: Multipart) -> &'static str {
     "File uploaded successfully!"
 }
 
-use flate2::write::GzEncoder;
-use flate2::Compression;
-use std::io::{BufReader, BufWriter, Read};
 
 pub async fn compress_file(mut multipart: Multipart) -> impl IntoResponse {
     let output_dir = "compressed_files";
@@ -86,43 +88,66 @@ pub async fn compress_file(mut multipart: Multipart) -> impl IntoResponse {
         std::fs::create_dir(output_dir).expect("Failed to create output directory");
     }
 
+    let mut compression_method = "default".to_string();
+    let mut responses = Vec::new(); 
+
     while let Some(field) = multipart.next_field().await.unwrap_or(None) {
+        if let Some(name) = field.name() {
+            if name == "method" {
+                compression_method = field.text().await.expect("Invalid compression method");
+                continue;
+            }
+        }
+
         if let Some(file_name) = field.file_name() {
             let file_name = file_name.to_string();
             let input_path = format!("{}/{}", output_dir, file_name);
             let output_path = format!("{}/{}.gz", output_dir, file_name);
 
-            // Save the uploaded file
             if let Ok(data) = field.bytes().await {
                 if let Err(e) = std::fs::write(&input_path, &data) {
                     eprintln!("Failed to save file {}: {}", input_path, e);
-                    return "Failed to save uploaded file".to_string();
+                    responses.push(json!({ "file": file_name, "error": "Failed to save uploaded file" }));
+                    continue;
                 }
             } else {
-                return "Failed to read uploaded file".to_string();
+                responses.push(json!({ "file": file_name, "error": "Failed to read uploaded file" }));
+                continue;
             }
 
-            // Compress the file
-            if let Err(e) = compress_file_internal(&input_path, &output_path) {
+            if let Err(e) = compress_file_internal(&input_path, &output_path, &compression_method) {
                 eprintln!("Failed to compress file {}: {}", input_path, e);
-                return "Failed to compress file".to_string();
-            }
+                responses.push(json!({ "file": file_name, "error": "Failed to compress file" }));
+                continue;
+            }       
 
-            return format!("File '{}' compressed successfully!", file_name);
+            responses.push(json!({
+                file_name: "successful"
+            }));
         }
     }
 
-    "No valid file uploaded!".to_string()
+    if responses.is_empty() {
+        Json(json!({ "error": "No valid file uploaded!" }))
+    } else {
+        Json(json!({ "results": responses }))
+    }
 }
 
-fn compress_file_internal(input_path: &str, output_path: &str) -> std::io::Result<()> {
+fn compress_file_internal(input_path: &str, output_path: &str, method: &str) -> std::io::Result<()> {
     let input_file = File::open(input_path)?;
     let mut reader = BufReader::new(input_file);
 
     let output_file = File::create(output_path)?;
     let writer = BufWriter::new(output_file);
 
-    let mut encoder = GzEncoder::new(writer, Compression::best());
+    let compression_level = match method {
+        "best" => Compression::best(),
+        "fast" => Compression::fast(),
+        _ => Compression::default(),
+    };
+
+    let mut encoder = GzEncoder::new(writer, compression_level);
     let mut buffer = Vec::new();
     reader.read_to_end(&mut buffer)?;
     encoder.write_all(&buffer)?;
@@ -130,3 +155,4 @@ fn compress_file_internal(input_path: &str, output_path: &str) -> std::io::Resul
 
     Ok(())
 }
+
