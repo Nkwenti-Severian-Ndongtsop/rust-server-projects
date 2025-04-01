@@ -1,7 +1,7 @@
+use serde_json::json;
 use std::path::PathBuf;
 use std::{env, fs};
 use std::{fs::File, io::Write, path::Path};
-use serde_json::json;
 
 use axum::Json;
 use axum::{extract::Multipart, response::IntoResponse};
@@ -81,7 +81,6 @@ pub async fn send_file(mut multipart: Multipart) -> &'static str {
     "File uploaded successfully!"
 }
 
-
 pub async fn compress_file(mut multipart: Multipart) -> impl IntoResponse {
     let output_dir = "compressed_files";
     if !Path::new(output_dir).exists() {
@@ -89,7 +88,7 @@ pub async fn compress_file(mut multipart: Multipart) -> impl IntoResponse {
     }
 
     let mut compression_method = "default".to_string();
-    let mut responses = Vec::new(); 
+    let mut responses = Vec::new();
 
     while let Some(field) = multipart.next_field().await.unwrap_or(None) {
         if let Some(name) = field.name() {
@@ -107,11 +106,14 @@ pub async fn compress_file(mut multipart: Multipart) -> impl IntoResponse {
             if let Ok(data) = field.bytes().await {
                 if let Err(e) = std::fs::write(&input_path, &data) {
                     eprintln!("Failed to save file {}: {}", input_path, e);
-                    responses.push(json!({ "file": file_name, "error": "Failed to save uploaded file" }));
+                    responses.push(
+                        json!({ "file": file_name, "error": "Failed to save uploaded file" }),
+                    );
                     continue;
                 }
             } else {
-                responses.push(json!({ "file": file_name, "error": "Failed to read uploaded file" }));
+                responses
+                    .push(json!({ "file": file_name, "error": "Failed to read uploaded file" }));
                 continue;
             }
 
@@ -119,7 +121,7 @@ pub async fn compress_file(mut multipart: Multipart) -> impl IntoResponse {
                 eprintln!("Failed to compress file {}: {}", input_path, e);
                 responses.push(json!({ "file": file_name, "error": "Failed to compress file" }));
                 continue;
-            }       
+            }
 
             responses.push(json!({
                 file_name: "successful"
@@ -134,7 +136,11 @@ pub async fn compress_file(mut multipart: Multipart) -> impl IntoResponse {
     }
 }
 
-fn compress_file_internal(input_path: &str, output_path: &str, method: &str) -> std::io::Result<()> {
+fn compress_file_internal(
+    input_path: &str,
+    output_path: &str,
+    method: &str,
+) -> std::io::Result<()> {
     let input_file = File::open(input_path)?;
     let mut reader = BufReader::new(input_file);
 
@@ -155,4 +161,3 @@ fn compress_file_internal(input_path: &str, output_path: &str, method: &str) -> 
 
     Ok(())
 }
-
