@@ -27,17 +27,18 @@ pub enum FileStatus {
     Failed,
 }
 
-pub async fn update_state(pool: &PgPool, file_id: i32, new_status: FileStatus) -> Result<(), sqlx::Error> {
-    sqlx::query(
-        "UPDATE files SET file_state = $1 WHERE id = $2"
-    )
-    .bind(new_status)  // Use `.to_string()` to bind the enum as a string
-    .bind(file_id)
-    .execute(pool)
-    .await?;
-    
+pub async fn update_state(
+    pool: &PgPool,
+    file_id: i32,
+    new_status: FileStatus,
+) -> Result<(), sqlx::Error> {
+    sqlx::query("UPDATE files SET file_state = $1 WHERE id = $2")
+        .bind(new_status) // Use `.to_string()` to bind the enum as a string
+        .bind(file_id)
+        .execute(pool)
+        .await?;
+
     println!("Successfully updated the value for file ID: {}", file_id);
-    
+
     Ok(())
 }
-
