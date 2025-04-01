@@ -8,6 +8,8 @@ mod database;
 
 use compress_parameters::param;
 use database::insert_user;
+use database::update_state;
+use database::FileStatus;
 
 #[tokio::main]
 async fn main() {
@@ -48,18 +50,38 @@ async fn main() {
         Ok(response) => {
             let pool1 = param().await;
             let pool2 = param().await;
+            let pool3 = param().await;
 
-            println!("\n\nUploaded files - Server Response: {}\n", response);
+            println!("\nServer Response: {}\n", response);
 
             for file in files {
+                let id = insert_user(&pool1, &pool2, file).await;
+                let _ = update_state(&pool3, id as i32, FileStatus::Completed).await;
                 println!(
-                    "The file {}\n\nHas ID: {}",
+                    "The file {}\n\nHas ID: {}\n\nFile State: completed",
                     file,
-                    insert_user(&pool1, &pool2, file).await
+                    id, 
                 )
+
             }
         }
-        Err(e) => eprintln!("Failed to upload files: {}\n", e),
+        Err(e) => {
+            let pool1 = param().await;
+            let pool2 = param().await;
+            let pool3 = param().await;
+
+            for file in files {
+                let id = insert_user(&pool1, &pool2, file).await;
+                let _ = update_state(&pool3, id as i32, FileStatus::Failed).await;
+                println!(
+                    "The file {}\n\nHas ID: {}\n\nFile State: failed",
+                    file,
+                    id, 
+                )
+
+            }
+            eprintln!("Failed to upload files: {}\n", e)
+        },
     }
 }
 
