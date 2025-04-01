@@ -7,4 +7,3 @@ pub async fn param() -> Pool<Postgres> {
         .await
         .unwrap()
 }
-
