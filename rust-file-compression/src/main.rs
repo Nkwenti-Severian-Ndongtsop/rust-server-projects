@@ -1,89 +1,83 @@
-use database::insert_user;
-use reqwest::blocking::multipart::{Form, Part};
-use reqwest::blocking::Client;
+use reqwest::multipart::{Form, Part};
+use reqwest::Client;
 use std::fs::File;
-use std::io::Read;
+use std::io::{self, Read};
+use clap::{Arg, Command};
 mod compress_parameters;
 mod database;
 
+use database::insert_user;
+use compress_parameters::param;
+
 #[tokio::main]
 async fn main() {
-    let mut input_files: Vec<String> = Vec::new();
-    let mut comp_meth: Vec<String> = Vec::new();
+    let matches = Command::new("Compress")
+        .version("1.0")
+        .author("Nkwenti-Severian")
+        .about("Uploads and compresses files with specified method")
+        .arg(Arg::new("compress")
+            .short('c')
+            .long("compress")
+            .value_name("FILES")
+            .num_args(1..)
+            .help("List of files to compress")
+            .required(true))
+        .arg(Arg::new("method")
+            .short('m')
+            .long("method")
+            .value_name("METHOD")
+            .help("Compression method: best, fast, default")
+            .default_value("default"))
+        .get_matches();
+
+    let files: Vec<&str> = matches.get_many::<String>("compress")
+        .unwrap()
+        .map(|s| s.as_str())
+        .collect();
+
+    let method = matches.get_one::<String>("method").unwrap();
     let server_url = "http://localhost:8000/compress";
-
-    loop {
-        let mut response = String::new();
-        let mut i_file = String::new();
-        let mut comp_method = String::new();
-        println!("Do you want to compress files (y/n)");
-
-        std::io::stdin()
-            .read_line(&mut response)
-            .expect("Failed to take response");
-
-        if response.trim() == "n" {
-            break;
-        } else if response.trim() == "y" {
-            println!("Enter the file to be compressed:");
-            std::io::stdin()
-                .read_line(&mut i_file)
-                .expect("Failed to take file");
-            input_files.push(i_file.trim().to_string());
-
-            println!("Enter compression method (e.g., best, fast, default):");
-            std::io::stdin()
-                .read_line(&mut comp_method)
-                .expect("Failed to take compression method");
-            comp_meth.push(comp_method.trim().to_string());
-        }
-    }
-
-    if input_files.is_empty() {
-        println!("No files to compress. Exiting.");
-        return;
-    }
-
-    let mut form = Form::new();
-    for (i, file_path) in input_files.iter().enumerate() {
-        let method = &comp_meth[i];
-        match File::open(file_path) {
-            Ok(mut file) => {
-                let mut buffer = Vec::new();
-                if file.read_to_end(&mut buffer).is_ok() {
-                    let filename = file_path.split('/').last().unwrap_or("unknown_file");
-                    let file_part = Part::bytes(buffer).file_name(filename.to_string());
-                    form = form.part(format!("file_{}", i), file_part);
-                    form = form.text(format!("method_{}", i), method.clone());
-                }
-            }
-            Err(e) => {
-                eprintln!("Failed to read file '{}': {}", file_path, e);
-                return;
-            }
-        }
-    }
-
     let client = Client::new();
-    match client.post(server_url).multipart(form).send() {
-        Ok(response) => match response.text() {
-            Ok(_) => {
-                for input in input_files {
-                    let pool = compress_parameters::param().await;
-                    let response_id = insert_user(&pool, &pool, &input).await;
 
-                    let status = format!(
-                        "UPDATE files SET file_status= 'completed' WHERE id={}",
-                        response_id
-                    );
-                    let status_result = sqlx::query(status.as_str()).execute(&pool).await.unwrap();
+    match compress_and_upload(&files, method, &client, server_url).await {
+        Ok(response) => {
+            let pool1 = param().await;
+            let pool2 = param().await;
 
-                    println!("Status: Pending");
-                    println!("status: {:?}", status_result)
-                }
+            println!("\n\nUploaded files - Server Response: {}\n", response);
+            
+            for file in files {
+                let id = insert_user(&pool1, &pool2, file).await;
+                println!("The file {}\n\nHas ID: {}", file, id)
             }
-            Err(_) => println!("Failed to read server response."),
         },
-        Err(err) => println!("Request failed: {:?}", err),
+        Err(e) => eprintln!("Failed to upload files: {}\n", e),
     }
+}
+
+async fn compress_and_upload(files: &[&str], method: &str, client: &Client, server_url: &str) -> Result<String, reqwest::Error> {
+    let mut form = Form::new();
+
+    for file_path in files {
+        if let Ok(file_bytes) = read_file(file_path) {
+            let filename = file_path.split('/').last().unwrap_or("unknown_file");
+            form = form.part("files", Part::bytes(file_bytes).file_name(filename.to_string()));
+        } else {
+            eprintln!("Failed to read file: {}\n", file_path);
+        }
+    }
+
+    form = form.text("method", method.to_string());
+
+    let response = client.post(server_url).multipart(form).send().await?;
+    let response_text = response.text().await?;
+
+    Ok(response_text)
+}
+
+fn read_file(file_path: &str) -> io::Result<Vec<u8>> {
+    let mut file = File::open(file_path)?;
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer)?;
+    Ok(buffer)
 }
