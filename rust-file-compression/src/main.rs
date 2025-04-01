@@ -1,8 +1,8 @@
+use database::insert_user;
 use reqwest::blocking::multipart::{Form, Part};
 use reqwest::blocking::Client;
 use std::fs::File;
 use std::io::Read;
-use database::insert_user;
 mod compress_parameters;
 mod database;
 
@@ -69,16 +69,15 @@ async fn main() {
         Ok(response) => match response.text() {
             Ok(_) => {
                 for input in input_files {
-
                     let pool = compress_parameters::param().await;
                     let response_id = insert_user(&pool, &pool, &input).await;
-    
+
                     let status = format!(
                         "UPDATE files SET file_status= 'completed' WHERE id={}",
                         response_id
                     );
                     let status_result = sqlx::query(status.as_str()).execute(&pool).await.unwrap();
-    
+
                     println!("Status: Pending");
                     println!("status: {:?}", status_result)
                 }
