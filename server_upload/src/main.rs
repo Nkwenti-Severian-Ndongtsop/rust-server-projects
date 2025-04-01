@@ -1,65 +1,52 @@
-use reqwest::blocking::multipart::{Form, Part};
-use reqwest::blocking::Client;
-use std::fs::File;
-use std::io::{self, Read};
+use clap::{Arg, Command};
+use reqwest::blocking::{Client, multipart::{Form, Part}};
+use std::{fs::File, io::Read};
 
 fn main() {
+
+    let matches = Command::new("File Uploader")
+        .arg(Arg::new("compress")
+            .short('c')
+            .num_args(1..)
+            .help("Files to compress & upload"))
+        .arg(Arg::new("method")
+            .short('m')
+            .default_value("default")
+            .help("Compression method: best, fast, or default"))
+        .get_matches();
+
+
+    let files: Vec<&str> = matches.get_many::<String>("compress")
+        .unwrap_or_default()
+        .map(String::as_str)
+        .collect();
+
+    let method = matches.get_one::<String>("method").unwrap();
+    
     let server_url = "http://localhost:8000/upload";
     let client = Client::new();
-    let mut files: Vec<String> = Vec::new();
 
-    loop {
-        let mut response = String::new();
-        println!("Do you want to upload a file? (y/n):");
-        io::stdin()
-            .read_line(&mut response)
-            .expect("Failed to read input");
-
-        match response.trim() {
-            "n" => break,
-            "y" => {
-                let mut file_path = String::new();
-                println!("Enter the file path:");
-                io::stdin()
-                    .read_line(&mut file_path)
-                    .expect("Failed to read file path");
-                let trimmed_path = file_path.trim().to_string();
-
-                if trimmed_path.is_empty() {
-                    println!("File path cannot be empty!");
-                } else {
-                    files.push(trimmed_path);
-                }
-            }
-            _ => println!("Invalid input. Please enter 'y' or 'n'."),
-        }
-    }
-
-    if files.is_empty() {
-        println!("No files selected for upload.");
-        return;
-    }
-
-    let mut form = Form::new();
-    for file_path in &files {
+    for file_path in files {
         match File::open(file_path) {
             Ok(mut file) => {
                 let mut buffer = Vec::new();
                 if file.read_to_end(&mut buffer).is_ok() {
                     let filename = file_path.split('/').last().unwrap_or("unknown_file");
-                    let part = Part::bytes(buffer).file_name(filename.to_string());
-                    form = form.part("files", part);
+                    
+                    let form = Form::new()
+                        .part("file", Part::bytes(buffer).file_name(filename.to_string()))
+                        .text("method", method.to_string()); 
+                    
+                    match client.post(server_url).multipart(form).send() {
+                        Ok(response) => match response.text() {
+                            Ok(text) => println!("Uploaded {} - Server Response: {}", filename, text),
+                            Err(_) => println!("Failed to read server response."),
+                        },
+                        Err(err) => println!("Request failed for {}: {:?}", filename, err),
+                    }
                 }
             }
             Err(_) => println!("Could not open file: {}", file_path),
         }
-    }
-
-    match client.post(server_url).multipart(form).send() {
-        Ok(response) => match response.text() {
-            Ok(text) => println!("Server Response: {}", text),
-            Err(_) => println!("Failed to read server response."),
-        },
-        Err(err) => println!("Request failed: {:?}", err),
     }
 }
