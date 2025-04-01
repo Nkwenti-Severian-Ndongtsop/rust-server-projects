@@ -2,8 +2,12 @@ use reqwest::blocking::multipart::{Form, Part};
 use reqwest::blocking::Client;
 use std::fs::File;
 use std::io::Read;
+use database::insert_user;
+mod compress_parameters;
+mod database;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut input_files: Vec<String> = Vec::new();
     let mut comp_meth: Vec<String> = Vec::new();
     let server_url = "http://localhost:8000/compress";
@@ -63,7 +67,22 @@ fn main() {
     let client = Client::new();
     match client.post(server_url).multipart(form).send() {
         Ok(response) => match response.text() {
-            Ok(text) => println!("Server Response: {}", text),
+            Ok(_) => {
+                for input in input_files {
+
+                    let pool = compress_parameters::param().await;
+                    let response_id = insert_user(&pool, &pool, &input).await;
+    
+                    let status = format!(
+                        "UPDATE files SET file_status= 'completed' WHERE id={}",
+                        response_id
+                    );
+                    let status_result = sqlx::query(status.as_str()).execute(&pool).await.unwrap();
+    
+                    println!("Status: Pending");
+                    println!("status: {:?}", status_result)
+                }
+            }
             Err(_) => println!("Failed to read server response."),
         },
         Err(err) => println!("Request failed: {:?}", err),
