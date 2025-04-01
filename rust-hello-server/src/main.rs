@@ -18,7 +18,7 @@ fn router() -> Router {
 
 #[tokio::main]
 async fn main() {
-    let addr = "0.0.0.0:8000";
+    let addr = "127.0.0.1:8000";
 
     let listener = TcpListener::bind(addr)
         .await
