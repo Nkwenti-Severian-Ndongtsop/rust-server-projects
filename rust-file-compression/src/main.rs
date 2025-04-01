@@ -52,8 +52,7 @@ async fn main() {
             println!("\n\nUploaded files - Server Response: {}\n", response);
 
             for file in files {
-                let id = insert_user(&pool1, &pool2, file).await;
-                println!("The file {}\n\nHas ID: {}", file, id)
+                println!("The file {}\n\nHas ID: {}", file, insert_user(&pool1, &pool2, file).await)
             }
         }
         Err(e) => eprintln!("Failed to upload files: {}\n", e),
