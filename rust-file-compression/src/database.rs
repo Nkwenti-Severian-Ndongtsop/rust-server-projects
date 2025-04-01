@@ -1,8 +1,4 @@
-pub async fn insert_user(
-    pool1: &sqlx::PgPool,
-    pool2: &sqlx::PgPool,
-    file_path: &str,
-) -> u64 {
+pub async fn insert_user(pool1: &sqlx::PgPool, pool2: &sqlx::PgPool, file_path: &str) -> u64 {
     let compressed_file = format!("{}.gz", file_path);
 
     let query = "INSERT INTO files (file_path, compressed_file) VALUES ($1, $2)";
