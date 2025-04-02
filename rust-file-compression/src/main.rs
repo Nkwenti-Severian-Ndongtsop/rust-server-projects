@@ -43,7 +43,7 @@ async fn main() {
         .collect();
 
     let method = matches.get_one::<String>("method").unwrap();
-    let server_url = "http://localhost:8000/compress";
+    let server_url = "http://127.0.0.1:8000/compress";
     let client = Client::new();
 
     match compress_and_upload(&files, method, &client, server_url).await {
