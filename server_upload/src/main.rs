@@ -29,7 +29,7 @@ fn main() {
 
     let method = matches.get_one::<String>("method").unwrap();
 
-    let server_url = "http://localhost:8000/upload";
+    let server_url = "http://127.0.0.1:8000/upload";
     let client = Client::new();
 
     for file_path in files {
