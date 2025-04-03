@@ -1549,6 +1549,7 @@ name = "rust-file-compression"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "dotenvy",
  "futures",
  "reqwest",
  "sqlx",
