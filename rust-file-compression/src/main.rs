@@ -1,18 +1,19 @@
 use clap::{Arg, Command};
+use dotenvy::dotenv;
 use reqwest::multipart::{Form, Part};
 use reqwest::Client;
+use std::env;
 use std::fs::File;
 use std::io::{self, Read};
-mod compress_parameters;
 mod database;
 
-use compress_parameters::param;
 use database::insert_user;
 use database::update_state;
 use database::FileStatus;
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
     let matches = Command::new("Compress")
         .version("1.0")
         .author("Nkwenti-Severian")
@@ -48,15 +49,20 @@ async fn main() {
 
     match compress_and_upload(&files, method, &client, server_url).await {
         Ok(response) => {
-            let pool1 = param().await;
-            let pool2 = param().await;
-            let pool3 = param().await;
+            let database_url = match env::var("DATABASE_URL") {
+                Ok(url) => url,
+                Err(e) => {
+                    eprintln!("Failed to read DATABASE_URL: {}", e);
+                    return;
+                }
+            };
+            let pool = sqlx::postgres::PgPool::connect(&database_url).await.unwrap();
 
             println!("\nServer Response: {}\n", response);
 
             for file in files {
-                let id = insert_user(&pool1, &pool2, file).await;
-                let _ = update_state(&pool3, id as i32, FileStatus::Completed).await;
+                let id = insert_user(&pool, file).await;
+                let _ = update_state(&pool, id as i32, FileStatus::Completed).await;
                 println!(
                     "The file {}\n\nHas ID: {}\n\nFile State: completed",
                     file, id,
@@ -64,13 +70,17 @@ async fn main() {
             }
         }
         Err(e) => {
-            let pool1 = param().await;
-            let pool2 = param().await;
-            let pool3 = param().await;
-
+            let database_url = match env::var("DATABASE_URL") {
+                Ok(url) => url,
+                Err(e) => {
+                    eprintln!("Failed to read DATABASE_URL: {}", e);
+                    return;
+                }
+            };
+            let pool = sqlx::postgres::PgPool::connect(&database_url).await.unwrap();
             for file in files {
-                let id = insert_user(&pool1, &pool2, file).await;
-                let _ = update_state(&pool3, id as i32, FileStatus::Failed).await;
+                let id = insert_user(&pool, file).await;
+                let _ = update_state(&pool, id as i32, FileStatus::Failed).await;
                 println!("The file {}\n\nHas ID: {}\n\nFile State: failed", file, id,)
             }
             eprintln!("Failed to upload files: {}\n", e)
