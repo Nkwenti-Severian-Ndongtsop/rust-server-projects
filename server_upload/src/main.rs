@@ -37,7 +37,7 @@ fn main() {
             Ok(mut file) => {
                 let mut buffer = Vec::new();
                 if file.read_to_end(&mut buffer).is_ok() {
-                    let filename = file_path.split('/').last().unwrap_or("unknown_file");
+                    let filename = file_path.split('/').next_back().unwrap_or("unknown_file");
 
                     let form = Form::new()
                         .part("file", Part::bytes(buffer).file_name(filename.to_string()))
