@@ -7,9 +7,7 @@ use std::fs::File;
 use std::io::{self, Read};
 mod database;
 
-use database::insert_user;
-use database::update_state;
-use database::FileStatus;
+use database::{insert_user, update_state, FileStatus};
 
 #[tokio::main]
 async fn main() {
@@ -56,17 +54,25 @@ async fn main() {
                     return;
                 }
             };
-            let pool = sqlx::postgres::PgPool::connect(&database_url).await.unwrap();
+            let pool = match sqlx::postgres::PgPool::connect(&database_url).await {
+                Ok(pool) => pool,
+                Err(e) => {
+                    eprintln!("Failed to connect to database: {}", e);
+                    return;
+                }
+            };
 
             println!("\nServer Response: {}\n", response);
 
             for file in files {
                 let id = insert_user(&pool, file).await;
-                let _ = update_state(&pool, id as i32, FileStatus::Completed).await;
+                if let Err(e) = update_state(&pool, id as i32, FileStatus::Completed).await {
+                    eprintln!("Failed to update state: {}", e);
+                }
                 println!(
                     "The file {}\n\nHas ID: {}\n\nFile State: completed",
-                    file, id,
-                )
+                    file, id
+                );
             }
         }
         Err(e) => {
@@ -77,13 +83,22 @@ async fn main() {
                     return;
                 }
             };
-            let pool = sqlx::postgres::PgPool::connect(&database_url).await.unwrap();
+            let pool = match sqlx::postgres::PgPool::connect(&database_url).await {
+                Ok(pool) => pool,
+                Err(e) => {
+                    eprintln!("Failed to connect to database: {}", e);
+                    return;
+                }
+            };
+
             for file in files {
                 let id = insert_user(&pool, file).await;
-                let _ = update_state(&pool, id as i32, FileStatus::Failed).await;
-                println!("The file {}\n\nHas ID: {}\n\nFile State: failed", file, id,)
+                if let Err(e) = update_state(&pool, id as i32, FileStatus::Failed).await {
+                    eprintln!("Failed to update state: {}", e);
+                }
+                println!("The file {}\n\nHas ID: {}\n\nFile State: failed", file, id);
             }
-            eprintln!("Failed to upload files: {}\n", e)
+            eprintln!("Failed to upload files: {}\n", e);
         }
     }
 }
@@ -97,23 +112,25 @@ async fn compress_and_upload(
     let mut form = Form::new();
 
     for file_path in files {
-        if let Ok(file_bytes) = read_file(file_path) {
-            let filename = file_path.split('/').last().unwrap_or("unknown_file");
-            form = form.part(
-                "files",
-                Part::bytes(file_bytes).file_name(filename.to_string()),
-            );
-        } else {
-            eprintln!("Failed to read file: {}\n", file_path);
+        match read_file(file_path) {
+            Ok(file_bytes) => {
+                let filename = file_path.split('/').last().unwrap_or("unknown_file");
+                form = form.part(
+                    "files",
+                    Part::bytes(file_bytes).file_name(filename.to_string()),
+                );
+            }
+            Err(e) => {
+                eprintln!("Failed to read file {}: {}", file_path, e);
+                continue;
+            }
         }
     }
 
     form = form.text("method", method.to_string());
 
     let response = client.post(server_url).multipart(form).send().await?;
-    let response_text = response.text().await?;
-
-    Ok(response_text)
+    response.text().await
 }
 
 fn read_file(file_path: &str) -> io::Result<Vec<u8>> {
