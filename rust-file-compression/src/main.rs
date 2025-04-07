@@ -114,7 +114,7 @@ async fn compress_and_upload(
     for file_path in files {
         match read_file(file_path) {
             Ok(file_bytes) => {
-                let filename = file_path.split('/').last().unwrap_or("unknown_file");
+                let filename = file_path.split('/').next_back().unwrap_or("unknown_file");
                 form = form.part(
                     "files",
                     Part::bytes(file_bytes).file_name(filename.to_string()),
